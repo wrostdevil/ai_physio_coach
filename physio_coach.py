@@ -1,3 +1,4 @@
+# updates
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -10,7 +11,6 @@ pose = mp_pose.Pose()
 mp_draw = mp.solutions.drawing_utils
 
 
-# ---------- GLOBAL VARIABLES ----------
 stage = "start"
 exercise = "None"
 warning = ""

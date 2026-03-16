@@ -120,17 +120,19 @@ with col1:
     st.subheader("Live Workout Camera")
 
     webrtc_streamer(
-        key="ai-fitness",
-        video_processor_factory=VideoProcessor,
-        media_stream_constraints={
-            "video":{
-                "width":{"ideal":1280},
-                "height":{"ideal":720}
-            },
-            "audio":False
-        },
-        async_processing=True
-    )
+    key="ai-fitness",
+    video_processor_factory=VideoProcessor,
+    async_processing=True,
+    rtc_configuration={
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]}
+        ]
+    },
+    media_stream_constraints={
+        "video": True,
+        "audio": False
+    }
+)
 
 
 # ---------- DASHBOARD ----------

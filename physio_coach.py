@@ -24,7 +24,6 @@ stats = {
 # ---------- CALORIES ----------
 calories = 0
 
-# calorie per rep
 CALORIES_MAP = {
     "squat":0.32,
     "curl":0.15,
@@ -54,7 +53,8 @@ def calculate_angle(a,b,c):
 # ---------- FRAME PROCESSING ----------
 def process_frame(frame):
 
-    global stage, exercise, warning, stats, prev_time, posture_score, calories
+    global stage, exercise, warning
+    global stats, prev_time, posture_score, calories
 
     frame = cv2.flip(frame,1)
 
@@ -68,6 +68,9 @@ def process_frame(frame):
     posture_score = 100
 
     try:
+
+        if not results.pose_landmarks:
+            return frame
 
         landmarks = results.pose_landmarks.landmark
 
@@ -85,18 +88,6 @@ def process_frame(frame):
         elbow_angle = calculate_angle(shoulder,elbow,wrist)
         back_angle = calculate_angle(shoulder,hip,knee)
 
-        # ---------- POSTURE SCORE ----------
-        if back_angle < 150:
-            posture_score -= 30
-
-        if knee_angle > 120 and exercise == "Squat":
-            posture_score -= 20
-
-        if elbow_angle > 90 and exercise == "Curl":
-            posture_score -= 20
-
-        posture_score = max(posture_score,0)
-
         # ---------- AUTO EXERCISE DETECTION ----------
         if knee_angle < 140:
             exercise = "Squat"
@@ -106,6 +97,19 @@ def process_frame(frame):
 
         elif elbow_angle < 100 and knee_angle > 150:
             exercise = "Pushup"
+
+
+        # ---------- POSTURE SCORE ----------
+        if back_angle < 150:
+            posture_score -= 30
+
+        if exercise == "Squat" and knee_angle > 120:
+            posture_score -= 20
+
+        if exercise == "Curl" and elbow_angle > 90:
+            posture_score -= 20
+
+        posture_score = max(posture_score,0)
 
 
         # ---------- SQUAT ----------

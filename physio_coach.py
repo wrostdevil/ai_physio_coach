@@ -21,6 +21,8 @@ stats = {
     "pushup":0
 }
 
+posture_score = 100
+
 prev_time = 0
 
 
@@ -43,7 +45,7 @@ def calculate_angle(a,b,c):
 # ---------- FRAME PROCESSING ----------
 def process_frame(frame):
 
-    global stage, exercise, warning, stats, prev_time
+    global stage, exercise, warning, stats, prev_time, posture_score
 
     frame = cv2.flip(frame,1)
 
@@ -54,6 +56,7 @@ def process_frame(frame):
     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
     warning = ""
+    posture_score = 100
 
     try:
 
@@ -72,6 +75,18 @@ def process_frame(frame):
         knee_angle = calculate_angle(hip,knee,ankle)
         elbow_angle = calculate_angle(shoulder,elbow,wrist)
         back_angle = calculate_angle(shoulder,hip,knee)
+
+        # ---------- POSTURE SCORE ----------
+        if back_angle < 150:
+            posture_score -= 30
+
+        if knee_angle > 120 and exercise == "Squat":
+            posture_score -= 20
+
+        if elbow_angle > 90 and exercise == "Curl":
+            posture_score -= 20
+
+        posture_score = max(posture_score,0)
 
         # ---------- AUTO EXERCISE DETECTION ----------
         if knee_angle < 140:
@@ -162,6 +177,11 @@ def process_frame(frame):
 
     cv2.putText(dashboard,f"Pushups: {stats['pushup']}",(30,370),
                 cv2.FONT_HERSHEY_SIMPLEX,0.6,(0,255,200),2)
+
+    # ---------- POSTURE SCORE ----------
+    cv2.putText(dashboard,f"Posture: {posture_score}%",
+                (30,410),
+                cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,255,255),2)
 
 
     # ---------- WARNING ----------

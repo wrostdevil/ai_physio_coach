@@ -6,3 +6,4 @@ numpy
 av
 reportlab
 matplotlib
+plotly

@@ -1,9 +1,9 @@
 import streamlit as st
-import av
+import cv2
+import numpy as np
 import time
 import pandas as pd
 import plotly.graph_objects as go
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 
 from physio_coach import process_frame, stats
 from report_generator import generate_report
@@ -32,13 +32,6 @@ st.markdown("""
 
 h1,h2,h3,h4{
     color:#00ffd5;
-}
-
-/* Responsive camera */
-video {
-    width:100% !important;
-    height:auto !important;
-    border-radius:12px;
 }
 
 /* Dashboard cards */
@@ -99,19 +92,7 @@ st.sidebar.write("• Pushups")
 
 
 # ---------- RESPONSIVE LAYOUT ----------
-# On mobile Streamlit automatically stacks columns
 col1, col2 = st.columns([4,2])
-
-
-# ---------- VIDEO PROCESSOR ----------
-class VideoProcessor(VideoProcessorBase):
-
-    def recv(self, frame):
-
-        img = frame.to_ndarray(format="bgr24")
-        img = process_frame(img)
-
-        return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 
 # ---------- CAMERA ----------
@@ -119,20 +100,18 @@ with col1:
 
     st.subheader("Live Workout Camera")
 
-    webrtc_streamer(
-    key="ai-fitness",
-    video_processor_factory=VideoProcessor,
-    async_processing=True,
-    rtc_configuration={
-        "iceServers": [
-            {"urls": ["stun:stun.l.google.com:19302"]}
-        ]
-    },
-    media_stream_constraints={
-        "video": True,
-        "audio": False
-    }
-)
+    img_file_buffer = st.camera_input("Capture Workout Frame")
+
+    if img_file_buffer is not None:
+
+        bytes_data = img_file_buffer.getvalue()
+
+        np_img = np.frombuffer(bytes_data, np.uint8)
+        frame = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+
+        processed = process_frame(frame)
+
+        st.image(processed, channels="BGR", use_container_width=True)
 
 
 # ---------- DASHBOARD ----------

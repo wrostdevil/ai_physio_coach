@@ -3,10 +3,9 @@ import av
 import time
 import pandas as pd
 import plotly.graph_objects as go
-import cv2
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 
-from physio_coach import process_frame, stats, posture_score, calories
+from physio_coach import process_frame, stats
 from report_generator import generate_report
 
 
@@ -18,7 +17,7 @@ st.set_page_config(
 )
 
 
-# ---------- MODERN UI STYLE ----------
+# ---------- RESPONSIVE STYLE ----------
 st.markdown("""
 <style>
 
@@ -35,13 +34,14 @@ h1,h2,h3,h4{
     color:#00ffd5;
 }
 
-video{
+/* Responsive camera */
+video {
     width:100% !important;
     height:auto !important;
-    max-height:720px;
     border-radius:12px;
 }
 
+/* Dashboard cards */
 .metric-card{
     background:#1e1e1e;
     padding:15px;
@@ -50,10 +50,15 @@ video{
     box-shadow:0px 4px 12px rgba(0,0,0,0.4);
 }
 
-@media (max-width:768px){
+/* Mobile layout adjustments */
+@media (max-width: 768px){
 
     h1{
         font-size:26px;
+    }
+
+    .metric-card{
+        padding:10px;
     }
 
     [data-testid="stSidebar"]{
@@ -94,7 +99,8 @@ st.sidebar.write("• Pushups")
 
 
 # ---------- RESPONSIVE LAYOUT ----------
-col1, col2 = st.columns([5,2])
+# On mobile Streamlit automatically stacks columns
+col1, col2 = st.columns([4,2])
 
 
 # ---------- VIDEO PROCESSOR ----------
@@ -103,10 +109,7 @@ class VideoProcessor(VideoProcessorBase):
     def recv(self, frame):
 
         img = frame.to_ndarray(format="bgr24")
-
         img = process_frame(img)
-
-        img = cv2.resize(img,(1280,720))
 
         return av.VideoFrame.from_ndarray(img, format="bgr24")
 
@@ -137,9 +140,15 @@ with col2:
 
     c1,c2,c3 = st.columns(3)
 
-    c1.metric("🦵 Squats",stats["squat"])
-    c2.metric("💪 Curls",stats["curl"])
-    c3.metric("🔥 Pushups",stats["pushup"])
+    with c1:
+        st.metric("🦵 Squats",stats["squat"])
+
+    with c2:
+        st.metric("💪 Curls",stats["curl"])
+
+    with c3:
+        st.metric("🔥 Pushups",stats["pushup"])
+
 
     st.divider()
 
@@ -156,23 +165,6 @@ with col2:
 
     st.plotly_chart(fig,use_container_width=True)
 
-    st.divider()
-
-
-    # ---------- POSTURE SCORE ----------
-    st.subheader("Posture Score")
-
-    st.progress(posture_score / 100)
-
-    st.write(f"{posture_score}% Form Accuracy")
-
-    st.divider()
-
-
-    # ---------- CALORIES BURNED ----------
-    st.subheader("Calories Burned")
-
-    st.metric("🔥 Calories", f"{round(calories,2)} kcal")
 
     st.divider()
 
@@ -188,7 +180,7 @@ with col2:
     st.bar_chart(chart_data.set_index("Exercise"),use_container_width=True)
 
 
-    # ---------- RESET BUTTON ----------
+    # ---------- RESET ----------
     if st.button("Reset Workout"):
 
         stats["squat"]=0

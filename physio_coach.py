@@ -2,38 +2,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
-import pyttsx3
-import matplotlib.pyplot as plt
-
-# ---------- GRAPH SETUP ----------
-plt.ion()
-
-def show_stats(stats):
-
-    exercises = list(stats.keys())
-    reps = list(stats.values())
-
-    plt.figure("Workout Progress")
-    plt.clf()
-
-    plt.bar(exercises,reps,color=["cyan","orange","lime"])
-
-    plt.title("Workout Progress")
-    plt.xlabel("Exercise")
-    plt.ylabel("Reps")
-
-    plt.pause(0.001)
-
-
-# ---------- VOICE ENGINE ----------
-engine = pyttsx3.init()
-engine.setProperty('rate',170)
-
-def speak(text):
-    engine.say(text)
-    engine.runAndWait()
-
-last_voice = 0
 
 # ---------- MEDIAPIPE ----------
 mp_pose = mp.solutions.pose
@@ -41,14 +9,20 @@ pose = mp_pose.Pose()
 
 mp_draw = mp.solutions.drawing_utils
 
-# ---------- CAMERA ----------
-cap = cv2.VideoCapture(0)
 
-if not cap.isOpened():
-    print("Camera not detected")
-    exit()
+# ---------- VARIABLES ----------
+stage = "start"
+exercise = "None"
+warning = ""
 
-cv2.namedWindow("AI Fitness Coach", cv2.WINDOW_NORMAL)
+stats = {
+    "squat":0,
+    "curl":0,
+    "pushup":0
+}
+
+prev_time = 0
+
 
 # ---------- ANGLE FUNCTION ----------
 def calculate_angle(a,b,c):
@@ -66,27 +40,10 @@ def calculate_angle(a,b,c):
     return angle
 
 
-# ---------- VARIABLES ----------
-stage = "start"
-exercise = "None"
-warning = ""
+# ---------- FRAME PROCESSING ----------
+def process_frame(frame):
 
-stats = {
-    "squat":0,
-    "curl":0,
-    "pushup":0
-}
-
-prev_time = 0
-
-
-# ---------- MAIN LOOP ----------
-while True:
-
-    ret, frame = cap.read()
-
-    if not ret:
-        continue
+    global stage, exercise, warning, stats, prev_time
 
     frame = cv2.flip(frame,1)
 
@@ -137,10 +94,6 @@ while True:
                 stage = "down"
                 stats["squat"] += 1
 
-                if time.time() - last_voice > 2:
-                    speak("Good squat")
-                    last_voice = time.time()
-
             if knee_angle > 110:
                 warning = "GO LOWER"
 
@@ -158,10 +111,6 @@ while True:
                 stage = "up"
                 stats["curl"] += 1
 
-                if time.time() - last_voice > 2:
-                    speak("Nice curl")
-                    last_voice = time.time()
-
             if elbow_angle > 90:
                 warning = "FULL CURL"
 
@@ -175,10 +124,6 @@ while True:
             if elbow_angle < 90 and stage == "up":
                 stage = "down"
                 stats["pushup"] += 1
-
-                if time.time() - last_voice > 2:
-                    speak("Good pushup")
-                    last_voice = time.time()
 
             hip_angle = calculate_angle(shoulder,hip,ankle)
 
@@ -229,10 +174,6 @@ while True:
                     (0,0,255),
                     3)
 
-        if time.time() - last_voice > 3:
-            speak(warning)
-            last_voice = time.time()
-
 
     # ---------- FPS ----------
     current_time = time.time()
@@ -257,14 +198,4 @@ while True:
 
     combined = np.hstack((image,dashboard))
 
-    cv2.imshow("AI Fitness Coach",combined)
-
-    # ---------- GRAPH UPDATE ----------
-    show_stats(stats)
-
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-
-cap.release()
-cv2.destroyAllWindows()
+    return combined

@@ -3,3 +3,6 @@ streamlit-webrtc
 opencv-python
 mediapipe
 numpy
+av
+reportlab
+matplotlib

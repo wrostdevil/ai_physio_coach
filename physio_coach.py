@@ -21,8 +21,17 @@ stats = {
     "pushup":0
 }
 
-posture_score = 100
+# ---------- CALORIES ----------
+calories = 0
 
+# calorie per rep
+CALORIES_MAP = {
+    "squat":0.32,
+    "curl":0.15,
+    "pushup":0.29
+}
+
+posture_score = 100
 prev_time = 0
 
 
@@ -45,7 +54,7 @@ def calculate_angle(a,b,c):
 # ---------- FRAME PROCESSING ----------
 def process_frame(frame):
 
-    global stage, exercise, warning, stats, prev_time, posture_score
+    global stage, exercise, warning, stats, prev_time, posture_score, calories
 
     frame = cv2.flip(frame,1)
 
@@ -108,6 +117,7 @@ def process_frame(frame):
             if knee_angle < 95 and stage == "up":
                 stage = "down"
                 stats["squat"] += 1
+                calories += CALORIES_MAP["squat"]
 
             if knee_angle > 110:
                 warning = "GO LOWER"
@@ -125,6 +135,7 @@ def process_frame(frame):
             if elbow_angle < 50 and stage == "down":
                 stage = "up"
                 stats["curl"] += 1
+                calories += CALORIES_MAP["curl"]
 
             if elbow_angle > 90:
                 warning = "FULL CURL"
@@ -139,6 +150,7 @@ def process_frame(frame):
             if elbow_angle < 90 and stage == "up":
                 stage = "down"
                 stats["pushup"] += 1
+                calories += CALORIES_MAP["pushup"]
 
             hip_angle = calculate_angle(shoulder,hip,ankle)
 
@@ -165,56 +177,37 @@ def process_frame(frame):
     cv2.putText(dashboard,exercise,(30,170),
                 cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,255),2)
 
-
-    cv2.putText(dashboard,"WORKOUT STATS",(30,240),
-                cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,255),2)
-
-    cv2.putText(dashboard,f"Squats: {stats['squat']}",(30,290),
+    cv2.putText(dashboard,f"Squats: {stats['squat']}",(30,260),
                 cv2.FONT_HERSHEY_SIMPLEX,0.6,(0,255,200),2)
 
-    cv2.putText(dashboard,f"Curls: {stats['curl']}",(30,330),
+    cv2.putText(dashboard,f"Curls: {stats['curl']}",(30,300),
                 cv2.FONT_HERSHEY_SIMPLEX,0.6,(0,255,200),2)
 
-    cv2.putText(dashboard,f"Pushups: {stats['pushup']}",(30,370),
+    cv2.putText(dashboard,f"Pushups: {stats['pushup']}",(30,340),
                 cv2.FONT_HERSHEY_SIMPLEX,0.6,(0,255,200),2)
 
-    # ---------- POSTURE SCORE ----------
+    cv2.putText(dashboard,f"Calories: {round(calories,2)} kcal",
+                (30,380),
+                cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,180,0),2)
+
     cv2.putText(dashboard,f"Posture: {posture_score}%",
-                (30,410),
+                (30,420),
                 cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,255,255),2)
 
-
-    # ---------- WARNING ----------
-    if warning != "":
-        cv2.putText(image,
-                    warning,
-                    (50,80),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1,
-                    (0,0,255),
-                    3)
-
-
-    # ---------- FPS ----------
     current_time = time.time()
     fps = 1/(current_time-prev_time) if prev_time!=0 else 0
     prev_time = current_time
 
-    cv2.putText(dashboard,f"FPS {int(fps)}",(30,440),
+    cv2.putText(dashboard,f"FPS {int(fps)}",(30,460),
                 cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,200,255),2)
 
-
-    # ---------- DRAW POSE ----------
     if results.pose_landmarks:
 
         mp_draw.draw_landmarks(
             image,
             results.pose_landmarks,
-            mp_pose.POSE_CONNECTIONS,
-            mp_draw.DrawingSpec(color=(0,255,0), thickness=2, circle_radius=2),
-            mp_draw.DrawingSpec(color=(255,255,255), thickness=2)
+            mp_pose.POSE_CONNECTIONS
         )
-
 
     combined = np.hstack((image,dashboard))
 

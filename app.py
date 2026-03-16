@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import cv2
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 
-from physio_coach import process_frame, stats, posture_score
+from physio_coach import process_frame, stats, posture_score, calories
 from report_generator import generate_report
 
 
@@ -169,6 +169,14 @@ with col2:
     st.divider()
 
 
+    # ---------- CALORIES BURNED ----------
+    st.subheader("Calories Burned")
+
+    st.metric("🔥 Calories", f"{round(calories,2)} kcal")
+
+    st.divider()
+
+
     # ---------- PROGRESS CHART ----------
     st.subheader("Workout Progress")
 
@@ -180,6 +188,7 @@ with col2:
     st.bar_chart(chart_data.set_index("Exercise"),use_container_width=True)
 
 
+    # ---------- RESET BUTTON ----------
     if st.button("Reset Workout"):
 
         stats["squat"]=0
